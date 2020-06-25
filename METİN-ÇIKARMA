@@ -1,0 +1,191 @@
+#! / usr / bin / env python
+
+"""
+Docx modülünü test et
+"""
+
+ithalat  os
+ lxml dosyasını içe aktar
+dan  docx  ithalat (
+    appproperties , contenttypes , coreproperties , getdocumenttext , başlık ,
+    makeelement , newdocument , nsprefixes , opendocx , pagebreak , paragraf ,
+    resim , ilişki listesi , değiştir , saveocx , arama , tablo , web ayarları ,
+    wordrelationships
+)
+
+TEST_FILE  =  'ShortTest.docx'
+IMAGE1_FILE  =  'image1.png'
+
+
+# --- Kurulum ve Destek İşlevleri ---
+def  setup_module ():
+    "" "Test fikstürlerini ayarla" ""
+    içe aktarma  kapağı
+    eğer  IMAGE1_FILE  değil  de  os . listdir ( '.' ):
+        kapat . CopyFile ( os . yolu . birleştirme ( os . yolu . pardir , IMAGE1_FILE ), IMAGE1_FILE )
+    testnewdocument ()
+
+
+def  teardown_module ():
+    "" "Test fikstürlerini sök" ""
+    eğer  test_file  içinde  os . listdir ( '.' ):
+        os . kaldır ( TEST_FILE )
+
+
+def  simpledoc ( noimagecopy = False ):
+    "" "Diğer docx testlerinde kullanmak için docx (belge, ilişkiler) yap" ""
+    relation  =  relationlist ()
+    imagefiledict  = {}
+    document  =  newdocument ()
+    docbody  =  belge . xpath ( '/ w: belge / w: gövde' , ad alanları = nsprefixes ) [ 0 ]
+    docbody . append ( başlık ( 'Başlık 1' , 1 ))
+    docbody . append ( başlık ( 'Başlık 2' , 2 ))
+    docbody . append ( paragraf ( 'Paragraf 1' ))
+    için  nokta  olarak [ 'listesi madde 1' , 'listesi Ürün 2' , 'listesi Madde 3' ]:
+        docbody . append ( paragraf ( nokta ; stil = 'ListNumber' ))
+    docbody . append ( pagebreak ( type = 'sayfa' ))
+    docbody . append ( paragraf ( 'Paragraf 2' ))
+    docbody . ekle (
+        tablo (
+            [
+                [ 'A1' , 'A2' , 'A3' ],
+                [ 'B1' , 'B2' , 'B3' ],
+                [ 'C1' , 'C2' , 'C3' ]
+            ]
+        )
+    )
+    docbody . append ( pagebreak ( type = 'bölüm' , orient = 'portre' ))
+    eğer  noimagecopy :
+        ilişkiler , picpara , imagefiledict  =  picture (
+            ilişkiler , IMAGE1_FILE , 'Bu bir test açıklamasıdır' ,
+            imagefiledict = imagefiledict
+        )
+    başka :
+        ilişkiler , picpara  =  resim (
+            ilişkileri , IMAGE1_FILE , 'Bu bir test açıklamasıdır'
+        )
+    docbody . append ( picpara )
+    docbody . append ( pagebreak ( type = 'bölüm' , orient = 'manzara' ))
+    docbody . append ( paragraf ( 'Paragraf 3' ))
+    eğer  noimagecopy :
+        dönüş ( belge , doküman , ilişkiler , imagefiledict )
+    başka :
+        geri dönüş ( belge , doküman , ilişkiler )
+
+
+# --- Test İşlevleri ---
+def  testleriearchandreplace ():
+    "" "Arama ve değiştirme işlevlerinin çalışmasını sağlayın" ""
+    belge , docbody , ilişkiler  =  simpledoc ()
+    docbody  =  belge . xpath ( '/ w: belge / w: gövde' , ad alanları = nsprefixes ) [ 0 ]
+    ileri  arama ( docbody , 'ing 1' )
+    iddia  arama ( docbody , 'ing 2' )
+    iddia  araştırması ( docbody , 'grafik 3' )
+    iddia  araştırması ( docbody , 'ist Item' )
+    iddia  arama ( docbody , 'A1' )
+    eğer  arama yaparsa ( docbody , 'Paragraf 2' ):
+        docbody  =  değiştir ( docbody , 'Paragraf 2' , 'Whacko 55' )
+    iddia  arama ( docbody , 'Whacko 55' )
+
+
+def  testtextextraction ():
+    "" "Metnin" "" belgesinden çekilebildiğinden emin olun
+    belge  =  opendocx ( TEST_FILE )
+    paratextlist  =  getdocumenttext ( belge )
+    assert  len ( paratextlist ) >  0
+
+
+def  testunsupportedpagebreak ():
+    "" "Desteklenmeyen sayfa sonu türlerinin sıkıştığından emin olun" ""
+    document  =  newdocument ()
+    docbody  =  belge . xpath ( '/ w: belge / w: gövde' , ad alanları = nsprefixes ) [ 0 ]
+    dene :
+        docbody . append ( pagebreak ( type = 'unsup' ))
+     ValueError hariç :
+        dönüş   # geçti
+    iddia  Yanlış   # başarısız
+
+
+def  testnewdocument ():
+    "" "Yeni bir belge oluşturulabileceğini test edin" ""
+    belge , docbody , ilişkiler  =  simpledoc ()
+    coreprops  =  çekirdek özellikler (
+        'Python docx testnewdocument' ,
+        'Python'dan docx yapmanın kısa bir örneği' , 'Alan Brooks' ,
+        [ 'python' , 'Office Açık XML' , 'Word' ]
+    )
+    saveocx (
+        belge , coreprops , appproperties (), contenttypes (), websettings (),
+        kelime ilişkileri ( ilişkiler ), TEST_FILE
+    )
+
+
+def  testnewdocument_noimagecopy ():
+    """
+    Yeni bir belge oluşturulabileceğini test edin
+    """
+    belge , docbody , ilişkiler , imagefiledict  =  simpledoc (
+        noimagecopy = Doğru
+    )
+    coreprops  =  çekirdek özellikler (
+        'Python docx testnewdocument' ,
+        'Python'dan docx yapmanın kısa bir örneği' , 'Alan Brooks' ,
+        [ 'python' , 'Office Açık XML' , 'Word' ]
+    )
+    saveocx (
+        belge , coreprops , appproperties (), contenttypes (), websettings (),
+        kelime ilişkileri ( ilişkiler ), TEST_FILE ,
+        imagefiledict = imagefiledict
+    )
+
+
+def  testopendocx ():
+    "" "Bir etree öğesinin döndürüldüğünden emin olun" ""
+    eğer  isinstance ( opendocx ( test_file ), Lxml . etree . _Element ):
+        geçmek
+    başka :
+         Yanlış iddia
+
+
+def  testmakeelement ():
+    "" "Özel öğelerin oluşturulmasını sağlayın" ""
+    testelement  =  makeelement (
+        'testname' ,
+        attributes = { 'testattribute' : 'testvalue' },
+        tagtext = 'testtagtext'
+    )
+    assert  testelement . etiketi  == (
+        '{Http://schemas.openxmlformats.org/wordprocessingml/2006/main}testn'
+        'Ame'
+    )
+    assert  testelement . attrib  == {
+        '{Http://schemas.openxmlformats.org/wordprocessingml/2006/main}testa'
+        'ttribute' : 'testvalue'
+    }
+    assert  testelement . text  ==  'testtagtext'
+
+
+def  testparagraph ():
+    "" "Paragrafın p öğeleri oluşturmasını sağlayın" ""
+    testpara  =  paragraf ( 'paratext' , style = 'BodyText' )
+    iddia  testpara . etiketi  == (
+        '{Http://schemas.openxmlformats.org/wordprocessingml/2006/main}p'
+    )
+    geçmek
+
+
+def  testtable ():
+    "" "Tabloların anlamlı olmasını sağlayın" ""
+    test edilebilir  =  tablo ([[ 'A1' , 'A2' ], [ 'B1' , 'B2' ], [ 'C1' , 'C2' ]])
+    iddia etmek (
+        test edilebilir . xpath (
+            '/ ns0: tbl / ns0: tr [2] / ns0: tc [2] / ns0: p / ns0: r / ns0: t' ,
+            namespaces = { 'ns0' : ( 'http://schemas.openxmlformats.org/wordproce'
+                                'ssingml / 2006 / main' )}
+        ) [ 0 ]. metin  ==  'B2'
+    )
+
+
+eğer  __name__  ==  '__main__' :
+    ithalat  burun
+    burun . ana ()
